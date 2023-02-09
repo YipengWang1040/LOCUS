@@ -30,7 +30,7 @@ buffers:
   # 3   ---> odometry integration 
 # Recommended to use 1 for NeBula Spot datasets
 data_integration:
-  mode: 3
+  mode: 0
 
 b_is_flat_ground_assumption: false
 
@@ -55,7 +55,7 @@ b_enable_msw: true
 
 window_local_mapping_type: multi_threaded_mapper
 
-box_filter_size: 20
+box_filter_size: 200
 velocity_buffer_size: 10
 translation_threshold_msw: 5
 rotational_velocity_threshold: 1
@@ -82,7 +82,7 @@ rotation_threshold_open_space_kf: 0.6
 # -------------------Adaptive voxelization---------------------
 
 b_adaptive_input_voxelization: true
-points_to_process_in_callback: 3000
+points_to_process_in_callback: 2000
 
 # ------------- Debug utilities -------------------------------
 
