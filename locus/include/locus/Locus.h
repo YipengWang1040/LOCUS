@@ -22,6 +22,7 @@ Authors:
 #include <message_filters/subscriber.h>
 #include <mutex>
 #include <nav_msgs/Odometry.h>
+#include <nav_msgs/Path.h>
 #include <parameter_utils/ParameterUtils.h>
 #include <pcl/common/common.h>
 #include <pcl_conversions/pcl_conversions.h>
@@ -90,7 +91,7 @@ private:
   ros::Subscriber odom_sub_;
 
   void setImuSubscriber(ros::NodeHandle& _nh);
-  void setOdomSubscriber(ros::NodeHandle& _nh);
+  void setOdomSubscriber(ros::NodeHandle& _nh); 
   void setLidarSubscriber(ros::NodeHandle& _nh);
 
   // Timer for odometry callback
@@ -101,6 +102,9 @@ private:
                        const Eigen::Matrix<double, 6, 6>& covariance,
                        const ros::Time stamp);
   ros::Publisher odometry_pub_;
+  ros::Publisher path_pub_;
+  tf::TransformBroadcaster pub_tf_;
+  nav_msgs::Path path_;
 
   ros::Publisher diagnostics_pub_;
 

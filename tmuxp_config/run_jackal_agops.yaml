@@ -2,7 +2,7 @@ session_name: locus_lidar_only
 
 environment:
   # Path for the dataset
-  DATA_PATH: /home/hteng/Documents/campus/CRIS_patio
+  DATA_PATH: /media/arcs/trash/dataset/agops/uniform_long_cross_move
 
   # Change the robot name and type to match the dataset 
   ROBOT_NAME: spot1
@@ -27,13 +27,13 @@ windows:
   panes:
     - rosrun tf static_transform_publisher 0 0 0 0 0 0 1 spot1/base_link velodyne 100
 
-    # Bags and topics of interest (switching if the log versions is older)
-    - sleep 3; rosbag play $DATA_PATH/*.bag -s$START -r$RATE --clock --topics /velodyne_points
-      /velodyne_points:=/spot1/velodyne_points/transformed
-
     # launch rviz
-    - rviz -d $(rospack find locus)/rviz/spot1_locus.rviz
+    - rviz -d spot1_locus.rviz
 
     # Front-end
-    - roslaunch locus locus.launch robot_namespace:=spot1 number_of_velodynes:=1;
+    - source devel/setup.bash; roslaunch locus locus.launch robot_namespace:=spot1 number_of_velodynes:=1;
+
+    # Bags and topics of interest (switching if the log versions is older)
+    # - sleep 8; rosbag play $DATA_PATH/*.bag -s$START -r$RATE --clock --topics /velodyne_points
+    #  /velodyne_points:=/spot1/velodyne_points/transformed
 

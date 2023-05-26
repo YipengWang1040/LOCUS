@@ -5,6 +5,8 @@ Authors:
 */
 
 #include <locus/Locus.h>
+#include <fstream>
+#include <iostream>
 
 namespace pu = parameter_utils;
 namespace gu = geometry_utils;
@@ -342,6 +344,7 @@ bool Locus::CreatePublishers(const ros::NodeHandle& n) {
         nl_.createTimer(odom_pub_rate_, &Locus::PublishOdomOnTimer, this);
   }
 
+  path_pub_ = nl.advertise<nav_msgs::Path>("path", 10);
   odometry_pub_ = nl.advertise<nav_msgs::Odometry>("odometry", 10, false);
   diagnostics_pub_ =
       nl.advertise<diagnostic_msgs::DiagnosticArray>("/diagnostics", 10, false);
@@ -423,9 +426,7 @@ void Locus::CheckMsgDropRate(const PointCloudF::ConstPtr& msg) {
 }
 
 void Locus::LidarCallback(const PointCloudF::ConstPtr& msg) {
-  if (b_enable_computation_time_profiling_) {
-    lidar_callback_start_ = ros::Time::now();
-  }
+  auto tic = std::chrono::steady_clock::now();
 
   if (b_adaptive_input_voxelization_) {
     ApplyAdaptiveInputVoxelization(msg);
@@ -542,11 +543,18 @@ void Locus::LidarCallback(const PointCloudF::ConstPtr& msg) {
     last_keyframe_pose_ = current_pose;
   }
 
-  if (b_enable_computation_time_profiling_) {
-    auto lidar_callback_end = ros::Time::now();
-    auto lidar_callback_duration = lidar_callback_end - lidar_callback_start_;
+  if (true) {
+    auto toc = std::chrono::steady_clock::now();
+    double time_elapsed_ms = std::chrono::duration_cast<std::chrono::nanoseconds>(toc - tic).count() / 1000000.0;
     auto lidar_callback_duration_msg = std_msgs::Float64();
-    lidar_callback_duration_msg.data = float(lidar_callback_duration.toSec());
+    static std::ofstream out("/home/arcs/cw_locus/times.txt");
+    out << time_elapsed_ms << ',' << std::endl;
+    static double total_time = 0;
+    static int total_frames = 0;
+    total_time += time_elapsed_ms;
+    total_frames += 1;
+    ROS_INFO("CUR. Time: %lfms", time_elapsed_ms);
+    lidar_callback_duration_msg.data = float(time_elapsed_ms);
     lidar_callback_duration_pub_.publish(lidar_callback_duration_msg);
   }
 
@@ -666,6 +674,25 @@ void Locus::PublishOdometry(const geometry_utils::Transform3& odometry,
     odometry_msg.pose.covariance[i] = covariance(row, col);
   }
   odometry_pub_.publish(odometry_msg);
+  
+  path_.header = odometry_msg.header;
+  
+  geometry_msgs::PoseStamped current_pose;
+  current_pose.header = odometry_msg.header;
+  current_pose.pose.position.x = odometry_msg.pose.pose.position.x;
+  current_pose.pose.position.y = odometry_msg.pose.pose.position.y;
+  current_pose.pose.position.z = odometry_msg.pose.pose.position.z;
+  current_pose.pose.orientation.x = odometry_msg.pose.pose.orientation.x;
+  current_pose.pose.orientation.y = odometry_msg.pose.pose.orientation.y;
+  current_pose.pose.orientation.z = odometry_msg.pose.pose.orientation.z;
+  current_pose.pose.orientation.w = odometry_msg.pose.pose.orientation.w;
+  path_.poses.push_back(current_pose);
+  path_pub_.publish(path_);
+  
+  tf::Transform tf_pub;
+  tf_pub.setOrigin(tf::Vector3(odometry_msg.pose.pose.position.x, odometry_msg.pose.pose.position.y, odometry_msg.pose.pose.position.z));
+  tf_pub.setRotation(tf::Quaternion(odometry_msg.pose.pose.orientation.x, odometry_msg.pose.pose.orientation.y, odometry_msg.pose.pose.orientation.z, odometry_msg.pose.pose.orientation.w));
+  pub_tf_.sendTransform(tf::StampedTransform(tf_pub, stamp, fixed_frame_id_, base_frame_id_));
 }
 
 // Utilities
